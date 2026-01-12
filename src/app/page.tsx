@@ -6,20 +6,28 @@ import UploadArea from '@/components/UploadArea';
 import ResultArea from '@/components/ResultArea';
 import { removeBackground } from './utils/backgroundRemover';
 
+import ImageCropper from '@/components/ImageCropper';
+
 export default function Home() {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
   const [processedImage, setProcessedImage] = useState<Blob | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [croppingFile, setCroppingFile] = useState<File | null>(null);
 
-  const handleFileSelect = async (file: File) => {
-    setOriginalImage(file);
+  const handleFileSelect = (file: File) => {
+    setCroppingFile(file);
+    setError(null);
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCroppingFile(null);
+    setOriginalImage(new File([croppedBlob], "cropped.png", { type: "image/png" }));
     setIsProcessing(true);
     setProcessedImage(null);
-    setError(null);
 
     try {
-      const resultBlob = await removeBackground(file);
+      const resultBlob = await removeBackground(croppedBlob);
       setProcessedImage(resultBlob);
     } catch (err) {
       console.error(err);
@@ -30,11 +38,17 @@ export default function Home() {
     }
   };
 
+  const handleCropCancel = () => {
+    setCroppingFile(null);
+    setOriginalImage(null);
+  };
+
   const handleReset = () => {
     setOriginalImage(null);
     setProcessedImage(null);
     setError(null);
     setIsProcessing(false);
+    setCroppingFile(null);
   };
 
   return (
@@ -46,7 +60,7 @@ export default function Home() {
         <a href="#main-content" className="skip-to-main">Skip to content</a>
 
         <div id="main-content">
-          {!originalImage && (
+          {!originalImage && !croppingFile && (
             <div style={{ textAlign: 'center', marginBottom: '3rem' }} className="fade-in">
               <h1 style={{ background: 'linear-gradient(to right, #1e293b, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block' }}>
                 Remove Image Background <br /> Instantly
@@ -64,7 +78,13 @@ export default function Home() {
               </div>
             )}
 
-            {!originalImage ? (
+            {croppingFile ? (
+              <ImageCropper
+                imageFile={croppingFile}
+                onCropComplete={handleCropComplete}
+                onCancel={handleCropCancel}
+              />
+            ) : !originalImage ? (
               <UploadArea onFileSelect={handleFileSelect} />
             ) : (
               <ResultArea

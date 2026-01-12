@@ -2,7 +2,7 @@ import { removeBackground as removeBackgroundLib } from '@imgly/background-remov
 
 let isInitialized = false;
 
-export async function removeBackground(imageFile: File): Promise<Blob> {
+export async function removeBackground(imageFile: Blob | File): Promise<Blob> {
     try {
         // The library auto-initializes on first use
         if (!isInitialized) {
